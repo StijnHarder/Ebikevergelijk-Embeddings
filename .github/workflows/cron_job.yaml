@@ -44,10 +44,10 @@ jobs:
         run: |
           python -c "import torch; import supabase; import timm; import einops; print('Setup Successful: All modules found.')"
 
-      # - name: Backfill Vector Storage
-      #   # Generates embeddings for new bikes and saves to Supabase
-      #   run: python backfill_vector_storage.py
+      - name: Backfill Vector Storage
+        # Generates embeddings for new bikes and saves to Supabase
+        run: python backfill_vector_storage.py
 
-      # - name: Update Bike Clusters
-      #   # Updates the master_bikes table based on new embeddings
-      #   run: python bike_clusters.py
+      - name: Update Bike Clusters
+        # Updates the master_bikes table based on new embeddings
+        run: python bike_clusters.py
