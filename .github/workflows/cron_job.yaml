@@ -1,9 +1,11 @@
 name: Bike Data Sync and Cluster
 
 on:
-  # schedule:
-  #   - cron: '0 0 * * *'
+  schedule:
+    # Runs at 00:00 every day (UTC) - Currently commented out for testing
+    # - cron: '0 0 * * *'
   workflow_dispatch:
+    # Allows you to trigger the job manually from the Actions tab
 
 jobs:
   build-and-run:
@@ -26,28 +28,30 @@ jobs:
         run: |
           pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
 
-      - name: Verify Torch Installation
-        run: python -c "import torch; print(f'Torch version: {torch.__version__}')"
-
-      - name: Install Dependencies (Except xformers)
+      - name: Install All Dependencies
         run: |
-          pip install supabase python-dotenv tqdm numpy
-          # Remove xformers from the internal list to prevent build errors
-          grep -v "xformers" perception_models/requirements.txt > temp_reqs.txt
-          pip install -r temp_reqs.txt
+          # 1. Install Infrastructure & Helper packages
+          pip install supabase python-dotenv tqdm requests numpy pillow
 
-      # - name: Install xformers
-      #   # We use --no-build-isolation to ensure it sees the Torch we just installed
-      #   run: |
-      #     pip install xformers==0.0.29.post1 --no-build-isolation || echo "xformers failed, continuing without it..."
+          # 2. Install Core Model dependencies (Meta PE-Core requirements)
+          pip install einops timm ftfy regex
 
-      - name: Install other dependencies
-        # We use --no-build-isolation to ensure it sees the Torch we just installed
+          # 3. Process local perception_models/requirements.txt
+          # We filter out xformers (causes build error) and packages already installed.
+          if [ -f perception_models/requirements.txt ]; then
+            grep -ivE "xformers|torch|torchvision|supabase|numpy|pillow" perception_models/requirements.txt > temp_reqs.txt
+            pip install -r temp_reqs.txt
+          fi
+
+      - name: Final Environment Check
+        # A quick "smoke test" to ensure imports work before running long scripts.
         run: |
-          pip install supabase python-dotenv tqdm requests --no-build-isolation || echo "installation of other dependencies failed, continuing without them..."
+          python -c "import torch; import supabase; import timm; import einops; print('Setup Successful: All modules found.')"
 
       # - name: Backfill Vector Storage
+      #   # Generates embeddings for new bikes and saves to Supabase
       #   run: python backfill_vector_storage.py
 
       # - name: Update Bike Clusters
+      #   # Updates the master_bikes table based on new embeddings
       #   run: python bike_clusters.py
