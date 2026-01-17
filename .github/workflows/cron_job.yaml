@@ -1,0 +1,53 @@
+name: Bike Data Sync and Cluster
+
+on:
+  # schedule:
+  #   - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+    
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install PyTorch (CPU Version)
+        run: |
+          pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Verify Torch Installation
+        run: python -c "import torch; print(f'Torch version: {torch.__version__}')"
+
+      - name: Install Dependencies (Except xformers)
+        run: |
+          pip install supabase python-dotenv tqdm numpy
+          # Remove xformers from the internal list to prevent build errors
+          grep -v "xformers" perception_models/requirements.txt > temp_reqs.txt
+          pip install -r temp_reqs.txt
+
+      # - name: Install xformers
+      #   # We use --no-build-isolation to ensure it sees the Torch we just installed
+      #   run: |
+      #     pip install xformers==0.0.29.post1 --no-build-isolation || echo "xformers failed, continuing without it..."
+
+      - name: Install other dependencies
+        # We use --no-build-isolation to ensure it sees the Torch we just installed
+        run: |
+          pip install supabase python-dotenv tqdm requests --no-build-isolation || echo "installation of other dependencies failed, continuing without them..."
+
+      # - name: Backfill Vector Storage
+      #   run: python backfill_vector_storage.py
+
+      # - name: Update Bike Clusters
+      #   run: python bike_clusters.py

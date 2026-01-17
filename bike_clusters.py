@@ -147,7 +147,7 @@ class BikeClusterUpdater:
             print(f"Cluster {cluster_id}: {count} bikes")
 
 if __name__ == "__main__":
-    clusterer = BikeClusterUpdater(similarity_threshold=0.90)
+    clusterer = BikeClusterUpdater(similarity_threshold=0.95)
     
     # Full baseline backfill
     clusterer.load_data(only_new=False)
